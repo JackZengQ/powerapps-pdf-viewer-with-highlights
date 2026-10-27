@@ -1,0 +1,57 @@
+[
+  {
+    "name": "Invoice total",
+    "metadata": {
+      "valueText": "$8,240.00",
+      "confidence": 0.943,
+      "location": {
+        "page": 2,
+        "boundingBox": {
+          "left": 0.8097,
+          "top": 0.6494,
+          "width": 0.117,
+          "height": 0.0215
+        }
+      }
+    }
+  },
+  {
+    "name": "Customer",
+    "metadata": {
+      "valueText": "Imaginary Orchard Studio",
+      "confidence": 0.87,
+      "location": {
+        "page": 1,
+        "boundingBox": {
+          "left": 0.06,
+          "top": 0.2167,
+          "width": 0.56,
+          "height": 0.025
+        }
+      }
+    }
+  },
+  {
+    "name": "Unlocated field",
+    "metadata": {
+      "valueText": "No location",
+      "confidence": 0.92
+    }
+  },
+  {
+    "name": "Threshold confidence",
+    "metadata": {
+      "valueText": "$8,240.00",
+      "confidence": 0.9,
+      "location": {
+        "page": 2,
+        "boundingBox": {
+          "left": 0.8097,
+          "top": 0.6494,
+          "width": 0.117,
+          "height": 0.0215
+        }
+      }
+    }
+  }
+]

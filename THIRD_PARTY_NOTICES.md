@@ -1,0 +1,3 @@
+PDF.js / pdfjs-dist 5.4.624 is Copyright 2024 Mozilla Foundation and licensed under Apache License 2.0. Its API and worker are bundled locally without source modifications. The original JavaScript license notices are retained in the worker source and the generated bundle license file. The full license is retained in `licenses/pdfjs-dist/LICENSE` and the component's packaged `strings/PdfViewer.1033.resx` resource.
+
+The repository's own code uses the MIT license in LICENSE. Development tools and the sample generator are separate dependencies; their licenses remain in their installed packages and their versions are recorded in the npm lockfiles. They are not bundled into the shipped control.

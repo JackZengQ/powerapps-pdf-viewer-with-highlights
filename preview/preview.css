@@ -1,0 +1,7 @@
+body { margin:0; background:#e8edf1; color:#172b3a; font:15px/1.5 "Segoe UI",sans-serif; }
+main { max-width:1400px; margin:0 auto; padding:28px; display:grid; grid-template-columns:300px minmax(0,1fr); gap:24px; }
+header { grid-column:1/-1; } header p { margin:4px 0; color:#486271; } h1 { margin:4px 0; font-size:32px; }
+.inputs { background:white; border-radius:8px; padding:20px; align-self:start; display:grid; gap:14px; }
+.inputs label { display:grid; gap:5px; font-weight:600; min-width:0; } .inputs input,.inputs select,.inputs textarea,.inputs button { min-width:0; width:100%; box-sizing:border-box; padding:8px; font:inherit; }
+.inputs textarea { font:12px/1.5 Consolas,monospace; } #viewer { height:740px; min-width:0; resize:both; overflow:hidden; }
+@media(max-width:800px) {main{grid-template-columns:minmax(0,1fr);} #viewer{height:600px;}}

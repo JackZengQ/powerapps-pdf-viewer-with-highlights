@@ -1,0 +1,6 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>PDF highlight preview</title></head>
+<body><main><header><p>ZEN GROQ / COMPONENT LAB</p><h1>PDF viewer with highlights</h1><p>Local preview · fictional data · no external services</p></header>
+<section class="inputs"><label>Local PDF <input id="file" type="file" accept="application/pdf"></label><label>Selected field <select id="field"></select></label>
+<label>Field name <input id="name" value="Invoice total"></label><label>Original field metadata <textarea id="metadata" rows="7"></textarea></label><button id="apply">Apply metadata</button><button id="invalid-pdf">Test invalid PDF</button><button id="restore">Restore sample</button></section>
+<div id="viewer"></div></main><script type="module" src="/preview/main.ts"></script></body></html>

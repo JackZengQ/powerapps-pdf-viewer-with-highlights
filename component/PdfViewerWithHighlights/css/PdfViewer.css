@@ -1,0 +1,15 @@
+.zengroq-pdf { box-sizing:border-box; display:flex; flex-direction:column; width:100%; height:100%; min-height:240px; font:14px/1.4 "Segoe UI",sans-serif; color:#172b3a; background:#f0f3f6; border:1px solid #c6d1db; }
+.zengroq-pdf * { box-sizing:border-box; }
+.zengroq-pdf .zengroq-pdf-toolbar { display:flex; flex-wrap:wrap; align-items:center; gap:8px; padding:10px; background:#fff; }
+.zengroq-pdf button { font:inherit; padding:5px 10px; border:1px solid #a0b1bf; border-radius:4px; background:#fff; color:#172b3a; cursor:pointer; }
+.zengroq-pdf button:disabled { opacity:.45; cursor:default; }
+.zengroq-pdf button:focus-visible { outline:2px solid #006fc4; outline-offset:2px; }
+.zengroq-pdf .zengroq-pdf-status { padding:6px 12px; min-height:32px; overflow-wrap:anywhere; }
+/* Keep fit-width calculations independent of whether the page needs a vertical
+   scrollbar. Otherwise scrollbar width can trigger an endless resize/render loop. */
+.zengroq-pdf .zengroq-pdf-scroll { flex:1; min-height:0; overflow:auto; scrollbar-gutter:stable; padding:16px; }
+.zengroq-pdf .zengroq-pdf-page { position:relative; margin:0 auto; background:white; box-shadow:0 2px 8px #0002; }
+.zengroq-pdf canvas { display:block; }
+.zengroq-pdf .zengroq-pdf-overlay { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
+.zengroq-pdf .confidence-high { fill:#18a05833; stroke:#16803d; stroke-width:2px; }
+.zengroq-pdf .confidence-low { fill:#f59e0b40; stroke:#d97706; stroke-width:2px; }

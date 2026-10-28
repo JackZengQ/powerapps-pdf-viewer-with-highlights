@@ -2,6 +2,8 @@
 
 Verified on Windows on October 27, 2026. No Dataverse authentication, import, app publishing, AI service call, commit, or GitHub push was performed.
 
+Version 1.1.0 adds continuous page scrolling and retains the silent handling of missing field locations from 1.0.2. Each page has its own canvas/SVG container; nearby page canvases are rendered on demand, and distant canvases are released. The page indicator and buttons follow the scroll position, while field selection scrolls directly to the selected page and bounding box.
+
 ## Prerequisites
 
 | Tool | Observed version |
@@ -22,13 +24,17 @@ PAC was absent from PATH. Installed Microsoft's CLI into the ignored `.tools/pac
 
 - Production PCF build: manifest validation, generated input types, Microsoft's ESLint checks, TypeScript compilation, Webpack bundling, CSS and localized license resource generation.
 - Unmanaged solution packaging using Microsoft's MSBuild targets. `SolutionPackageType=Unmanaged` is explicit. The ZIP contains the control manifest, bundle, CSS, bundle license notice, full PDF.js license resource, solution manifest, and customization metadata. The solution manifest records `Managed=0`.
-- Six Playwright tests in headless Chromium, using real PDF.js rendering:
+- Ten Playwright tests in headless Chromium, using real PDF.js rendering:
   1. Page-2 selection, nonblank rendered document pixels, green high-confidence box, scroll into view, zoom, horizontal and vertical scrolling, resize alignment, page-1 selection, manual page navigation, orange low confidence, and orange confidence exactly 0.9. Geometry is compared with normalized metadata, including after canvas size changes.
   2. Missing location, invalid JSON, invalid object, invalid page, out-of-bounds box, nonexistent document page, structurally invalid PDF bytes, and recovery with a valid document.
   3. Equivalent raw base64 and PDF data URL reuse one document load; selection changes reuse that load. Rapid document replacement followed by destruction removes the component cleanly.
   4. Nonzero page rotation produces an explanatory error; an unrotated page in the same PDF remains viewable.
   5. The actual minified production PCF bundle runs through its adapter with a simulated PCF context, renders page 2 and its highlight, destroys its DOM, and makes no external HTTP requests.
   6. At 50% zoom with real Windows-style scrollbars enabled, resizing the viewer across the overflow threshold settles without width oscillation or repeated renders. The regression failed before the fix: at viewer heights of 570 and 575 pixels, widths alternated between 781 and 798 pixels and the canvas was replaced 12-13 times in 200 ms. Reserving the scrollbar gutter removes that feedback loop. Playwright's normal `--hide-scrollbars` option is disabled for this test because it masked the bug in the original suite.
+  7. The preview renders page 2 with nonblank PDF pixels and the green highlight after removing `Promise.withResolvers` and `Promise.try` from both the page and the real Blob worker before either initializes. Both realms install the legacy build's bundled shims, and no external requests or page errors occur.
+  8. The actual production PCF bundle passes the same missing-Promise-API test in a fresh blank page. No preview module is loaded first, so it cannot hide an initialization-order problem in the compiled control. The worker's prelude records both APIs as undefined before the legacy worker executes, and both are functions after rendering.
+  9. Wheel scrolling moves forward and backward between pages, updates the page indicator and disabled navigation state, keeps highlights attached to their pages, and allows field selection and toolbar controls to jump across pages.
+  10. An eight-page fictional document retains all page containers while allocating fewer than eight canvases. Scrolling to page 8 releases page 1's canvas; returning to page 1 renders it again and releases page 8's canvas without browser errors.
 - Full rendered canvas images of both fictional PDF pages were visually inspected for clipping, overlapping text, and legibility. The preview highlight was also visually checked over the amount.
 - Git's untracked-file listing was reviewed: dependency folders, local tooling, generated worker, build/test outputs, and solution ZIP are ignored. No existing user files were deleted.
 
@@ -36,7 +42,7 @@ Run `npm run build` before `npm test`; the fifth test intentionally loads the pr
 
 ## Warnings and limits
 
-- Webpack reports three performance warnings because the self-contained API/worker bundle is about 2.4 MiB. Compilation and packaging succeed; these are size advisories.
+- Webpack reports three performance warnings because the self-contained legacy API/worker bundle is about 2.61 MiB. Compilation and packaging succeed; these are size advisories.
 - Root npm dependencies audited with zero reported vulnerabilities. Microsoft's current PCF development-tool dependency tree reports six moderate advisories involving Application Insights / OpenTelemetry. These tools are not shipped in the browser bundle. PCF tool versions are pinned; no forced downgrade or incompatible override is applied.
 - A preview hot reload initially interrupted one test while the build was changing files. A separate production-bundle check initially encountered Vite's JavaScript transformation; it now injects the actual compiled bytes. Both were corrected and the complete suite passed afterward.
 - Power Apps Studio import, runtime in Dataverse, mobile clients, tenant-specific Blob worker policies, large production PDFs, and PDFs requiring optional CMaps/font/WASM assets were not tested. These need a manual development-environment smoke test before use. Rotation and optional-resource limitations are documented in README.

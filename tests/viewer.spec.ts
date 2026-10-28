@@ -4,10 +4,10 @@ import { readFileSync, writeFileSync } from 'node:fs';
 
 async function rendered(page: Page, number: number) {
   await expect(page.locator('.zengroq-pdf')).toHaveAttribute('data-rendered-page', String(number));
-  await expect(page.locator('.zengroq-pdf-page canvas')).toBeVisible();
+  await expect(page.locator(`.zengroq-pdf-page[data-page-number="${number}"] canvas`)).toBeVisible();
 }
 async function alignment(page: Page) {
-  const result = await page.locator('.zengroq-pdf-page').evaluate(element => {
+  const result = await page.locator('.zengroq-pdf-page:has(rect)').evaluate(element => {
     const canvas = element.querySelector('canvas')!.getBoundingClientRect();
     const svg = element.querySelector('svg')!.getBoundingClientRect();
     const rect = element.querySelector('rect')!.getBoundingClientRect();
@@ -22,7 +22,8 @@ async function alignment(page: Page) {
 test('real PDF rendering, page selection, confidence, zoom, scroll and resize alignment', async ({page}) => {
   const errors: string[] = []; page.on('pageerror',error=>errors.push(error.message));
   await page.goto('/'); await rendered(page,2);
-  writeFileSync('test-results/sample-page-2.png',Buffer.from(await page.locator('canvas').evaluate((canvas:HTMLCanvasElement)=>canvas.toDataURL().split(',')[1]),'base64'));
+  const canvas = page.locator('.zengroq-pdf-page[data-page-number="2"] canvas');
+  writeFileSync('test-results/sample-page-2.png',Buffer.from(await canvas.evaluate((canvas:HTMLCanvasElement)=>canvas.toDataURL().split(',')[1]),'base64'));
   await expect(page.locator('rect')).toHaveClass('confidence-high');
   const region = await page.locator('.zengroq-pdf-scroll').boundingBox();
   const highlight = await page.locator('rect').boundingBox();
@@ -31,31 +32,33 @@ test('real PDF rendering, page selection, confidence, zoom, scroll and resize al
   expect(highlight!.x).toBeGreaterThanOrEqual(region!.x);
   expect(highlight!.x + highlight!.width).toBeLessThanOrEqual(region!.x + region!.width);
   // Non-white pixels prove PDF.js rendered document content rather than only a blank canvas.
-  expect(await page.locator('canvas').evaluate((canvas: HTMLCanvasElement) => {
+  expect(await canvas.evaluate((canvas: HTMLCanvasElement) => {
     const pixels = canvas.getContext('2d')!.getImageData(0,0,canvas.width,canvas.height).data;
     let dark = 0; for(let i=0;i<pixels.length;i+=4) if(pixels[i]<100 && pixels[i+1]<150) dark++;
     return dark;
   })).toBeGreaterThan(1000);
   await alignment(page);
-  const initialWidth = await page.locator('canvas').evaluate(el=>el.getBoundingClientRect().width);
+  const initialWidth = await canvas.evaluate(el=>el.getBoundingClientRect().width);
   await page.getByRole('button',{name:'Zoom in',exact:true}).click();
   await expect(page.getByText('125%',{exact:true})).toBeVisible();
-  await expect.poll(()=>page.locator('canvas').evaluate(el=>el.getBoundingClientRect().width)).toBeGreaterThan(initialWidth * 1.24);
+  await expect.poll(()=>canvas.evaluate(el=>el.getBoundingClientRect().width)).toBeGreaterThan(initialWidth * 1.24);
   await alignment(page);
   await page.locator('.zengroq-pdf-scroll').evaluate(el=>{el.scrollTop=240;el.scrollLeft=90;}); await alignment(page);
   await page.locator('#viewer').evaluate(el=>{el.style.width='620px';el.style.height='500px';});
-  await expect.poll(()=>page.locator('canvas').evaluate(el=>el.getBoundingClientRect().width)).toBeLessThan(800);
+  await expect.poll(()=>canvas.evaluate(el=>el.getBoundingClientRect().width)).toBeLessThan(800);
   await alignment(page);
   await page.locator('#field').selectOption('1'); await rendered(page,1);
-  writeFileSync('test-results/sample-page-1.png',Buffer.from(await page.locator('canvas').evaluate((canvas:HTMLCanvasElement)=>canvas.toDataURL().split(',')[1]),'base64'));
+  writeFileSync('test-results/sample-page-1.png',Buffer.from(await page.locator('.zengroq-pdf-page[data-page-number="1"] canvas').evaluate((canvas:HTMLCanvasElement)=>canvas.toDataURL().split(',')[1]),'base64'));
   await expect(page.locator('rect')).toHaveClass('confidence-low');
-  await page.getByRole('button',{name:'Next page',exact:true}).click(); await rendered(page,2); await expect(page.locator('rect')).toHaveCount(0);
+  await page.getByRole('button',{name:'Next page',exact:true}).click(); await rendered(page,2);
+  await expect(page.locator('.zengroq-pdf-page[data-page-number="2"] rect')).toHaveCount(0);
+  await expect(page.locator('.zengroq-pdf-page[data-page-number="1"] rect')).toHaveCount(1);
   await page.locator('#field').selectOption('3'); await expect(page.locator('rect')).toHaveClass('confidence-low');
   await page.screenshot({path:'test-results/preview.png',fullPage:true}); expect(errors).toEqual([]);
 });
 test('metadata validation, missing location, invalid PDF and recovery',async({page})=>{
   await page.goto('/'); await rendered(page,2);
-  await page.locator('#field').selectOption('2'); await expect(page.getByText('No location available',{exact:true})).toBeVisible(); await expect(page.locator('rect')).toHaveCount(0);
+  await page.locator('#field').selectOption('2'); await expect(page.getByRole('status')).toBeEmpty(); await expect(page.locator('rect')).toHaveCount(0);
   for (const [metadata, message] of [
     ['{oops','not valid JSON'],['null','must be an object'],
     ['{"location":{"page":0}}','one-based'],
@@ -94,7 +97,7 @@ test('rotated pages fail usefully and unrotated pages remain available', async({
   await page.goto('/'); await rendered(page,2);
   await page.locator('#file').setInputFiles({name:'rotated.pdf',mimeType:'application/pdf',buffer:Buffer.from(await pdf.save())});
   await expect(page.getByRole('status')).toContainText('Rotated PDF pages are not supported');
-  await expect(page.locator('canvas')).toHaveCount(0);
+  await expect(page.locator('.zengroq-pdf-page[data-page-number="2"] canvas')).toHaveCount(0);
   await page.getByRole('button',{name:'Previous page',exact:true}).click();await rendered(page,1);
   await expect(page.getByRole('status')).not.toContainText('Rotated PDF');
 });

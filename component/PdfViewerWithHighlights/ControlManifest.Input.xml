@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest>
-  <control namespace="Zengroq" constructor="PdfViewerWithHighlights" version="1.0.0" display-name-key="PDF viewer with highlights" description-key="Local PDF viewer with AI Builder field highlights" control-type="standard">
+  <control namespace="Zengroq" constructor="PdfViewerWithHighlights" version="1.1.0" display-name-key="PDF viewer with highlights" description-key="Local PDF viewer with AI Builder field highlights" control-type="standard">
     <external-service-usage enabled="false" />
     <property name="DocumentBase64" display-name-key="PDF document base64" description-key="Raw base64 or PDF data URL" of-type="Multiple" usage="input" required="false" />
     <property name="SelectedFieldJson" display-name-key="Selected field JSON" description-key="Original AI Builder field metadata" of-type="Multiple" usage="input" required="false" />
@@ -8,7 +8,7 @@
     <resources>
       <code path="index.ts" order="1" />
       <css path="css/PdfViewer.css" order="1" />
-      <resx path="strings/PdfViewer.1033.resx" version="1.0.0" />
+      <resx path="strings/PdfViewer.1033.resx" version="1.1.0" />
     </resources>
   </control>
 </manifest>

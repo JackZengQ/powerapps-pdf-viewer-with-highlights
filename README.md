@@ -1,6 +1,6 @@
 # PDF viewer with highlights
 
-`Zengroq.PdfViewerWithHighlights` is a reusable TypeScript PCF control for Power Apps canvas apps. PDF.js renders one page at a time into a canvas; an SVG in the same page container displays the selected AI Builder field's normalized bounding box. Documents stay local to the control. No AI services or CDN are used.
+`Zengroq.PdfViewerWithHighlights` is a reusable TypeScript PCF control for Power Apps canvas apps. PDF.js renders a continuous scrollable column of pages, each with its own canvas and SVG overlay for the selected AI Builder field's normalized bounding box. Nearby pages render on demand. Documents stay local to the control. No AI services or CDN are used.
 
 ## Quick start
 
@@ -30,10 +30,10 @@ powershell -ExecutionPolicy Bypass -File scripts/package.ps1
 The packaging script restores official NuGet build packages, builds a production control, and explicitly selects **Unmanaged**, even in Release configuration. The development ZIP is:
 
 ```text
-artifacts/ZengroqPdfViewerWithHighlights_1_0_0_0_unmanaged.zip
+artifacts/ZengroqPdfViewerWithHighlights_1_1_0_0_unmanaged.zip
 ```
 
-The original packaging output is `solution/bin/Release/solution.zip`. Both are ignored build artifacts. No authentication, Dataverse connection, import, publishing, or Git push occurs during these commands. See [Microsoft's packaging guidance](https://learn.microsoft.com/en-us/power-apps/developer/component-framework/import-custom-controls).
+The original packaging output is `solution/bin/Release/solution.zip`. The component manifest version is **1.1.0** and the solution version is **1.1.0.0**. Both ZIPs are ignored build artifacts. No authentication, Dataverse connection, import, publishing, or Git push occurs during these commands. See [Microsoft's packaging guidance](https://learn.microsoft.com/en-us/power-apps/developer/component-framework/import-custom-controls).
 
 For direct packaging without the helper:
 
@@ -107,20 +107,23 @@ Use the base64 representation of `samples/fictional-invoice.pdf` for `varPdfBase
 ```
 
 - Pages are one-based. Coordinates are normalized to the full page, with a top-left origin. Boxes must have positive dimensions and stay within the page. Out-of-range pages produce an error rather than a fabricated location.
-- A selection navigates to its page, draws its box, and scrolls the region into view. Manual page navigation shows a box only on its matching page.
+- A selection scrolls to its page, draws its box, and brings the region into view. Scroll naturally between pages with the mouse wheel, trackpad, scrollbar, or keyboard. The page indicator follows the most visible page; previous/next buttons scroll to the neighboring page. The selected box stays attached to its matching page when you scroll away.
 - Confidence strictly above 0.9 is green. Confidence at or below 0.9, or absent confidence, is orange. Supplied confidence must be a number in `[0, 1]`.
-- Missing or null `location`, or an empty metadata input, shows **No location available** and no box. Invalid JSON and invalid boxes show useful messages. PDF load/render errors do not crash the host.
+- Missing or null `location`, or an empty metadata input, shows no location message and no box. Invalid JSON and invalid boxes show useful messages. PDF load/render errors do not crash the host.
 - Zoom ranges from 25% to 400% of fit width. ResizeObserver recomputes fit width; canvas and SVG share identical page dimensions. The viewer reserves vertical scrollbar space to prevent repeated redraws near overflow thresholds, including at 50% zoom. Device pixel ratio affects canvas resolution, not normalized coordinates.
 - The normalized PDF content is cached per instance. Changes only to selection, label, size, or zoom do not reload the document. Raw base64 and its equivalent PDF data URL share the same identity.
-- Pending renders and stale asynchronous results are cancelled or ignored. Destruction disconnects the observer, cancels the animation frame and render, destroys PDF.js resources, terminates the worker, revokes its Blob URL, and removes the DOM.
+- Page containers retain their dimensions throughout scrolling. Only pages within roughly one viewport of the visible region keep rendered canvases; distant canvases are cancelled and released, then rendered again when you return. Zoom and resize preserve the current page's scroll position or keep its selected field in view. Selection changes update overlays without reloading or repainting the PDF.
+- Pending renders and stale asynchronous results are cancelled or ignored. Destruction disconnects the resize observer, removes the scroll listener, cancels animation frames and page renders, destroys PDF.js resources, terminates the worker, revokes its Blob URL, and removes the DOM.
 
 ## Limitations
 
-- Only unrotated pages are supported. A page with nonzero PDF `/Rotate` is rejected with an explanatory message; preprocess such PDFs to flatten rotation and ensure the metadata matches that resulting page. Landscape pages with zero rotation are supported. No rotation coordinate transformation is attempted.
-- The control renders a single active page, with previous/next navigation. It does not include text selection, search, annotations, forms, password entry, or a continuous all-pages view.
+Runtime compatibility: the renderer imports `pdfjs-dist/legacy/build/pdf.mjs`, and the generated Blob worker comes from the same installed package's `legacy/build/pdf.worker.mjs`. Both stay pinned to **5.4.624**. These self-contained legacy builds install their bundled core-js shims before PDF.js uses newer APIs, independently in the main page and worker. No separate CDN polyfill is needed. Worker preparation verifies the exact package version, both artifact version markers, and the Promise compatibility preambles. Regression tests remove both `Promise.withResolvers` and `Promise.try` before loading either the preview or the production PCF bundle and before the worker executes; both must render the sample successfully.
+
+- Only unrotated pages are supported. A page with nonzero PDF `/Rotate` displays an explanatory placeholder; other pages remain scrollable. Preprocess rotated PDFs to flatten rotation and ensure the metadata matches that resulting page. Landscape pages with zero rotation are supported. No rotation coordinate transformation is attempted.
+- The control does not include text selection, search, annotations, forms, or password entry. Page dimensions are read for the whole document before laying out the continuous page column; very large page counts have not been benchmarked.
 - The worker uses a local Blob module URL. The actual host must permit Blob workers. The local Chromium test verifies this technique, but Power Apps Studio, mobile clients, and tenant-specific CSP behavior still require a development-environment smoke test.
 - The initial bundle includes the API and worker, but not PDF.js's optional external CMaps, standard-font files, or WASM image decoders. PDFs relying on those optional resources may render incompletely or show a rendering error. Latin text in this fixture is tested. No missing resources are fetched from a CDN.
-- Large base64 strings and high zoom consume browser memory; Power Apps transport limits and representative production PDF sizes have not been benchmarked. The production JS is about 2.4 MiB and triggers Webpack performance-size warnings.
+- Large base64 strings and high zoom consume browser memory; Power Apps transport limits and representative production PDF sizes have not been benchmarked. The production JS is about 2.61 MiB, including legacy polyfills, and triggers Webpack performance-size warnings.
 
 ## Repository map
 
